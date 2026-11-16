@@ -18,7 +18,7 @@ local defaults = {
 	mover = { default = { "BOTTOMRIGHT", "BOTTOMRIGHT", -220, 180 } },
 }
 
-ACore.New(ADDON, ns, { db = "ATipDB", defaults = defaults })
+ACore.New(ADDON, ns, { db = "ATipDB", defaults = defaults, profile = true })
 
 ns.tips = {}
 
