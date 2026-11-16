@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: ATip
+## Notes: Cleaner tooltips with class colours, targets and item details
+## Version: 0.1.0
+## Category: Tooltip
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+## Dependencies: ACore
+## SavedVariables: ATipDB
+
+Core.lua
+Style.lua
+Unit.lua
+Item.lua
+Anchor.lua
+Options.lua
