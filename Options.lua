@@ -17,9 +17,39 @@ local function anchorEntry(text, mode)
 	}
 end
 
-function ns.OpenOptions(anchor)
+function ns.Options()
 	local db = ns.db
-	if not db then return end
+	local entries = {
+		{ text = "Units", title = true },
+		UI.Check(db, "style", "Dark flat look", changed),
+		UI.Check(db, "classColor", "Colour names by class or reaction", changed),
+		UI.Check(db, "border", "Colour the border by class or reaction", changed),
+		UI.Check(db, "guild", "Highlight guild names", changed),
+		UI.Check(db, "level", "Coloured level, race and class line", changed),
+		UI.Check(db, "target", "Show who the unit is targeting", changed),
+		UI.Check(db, "healthBar", "Slim health bar", changed),
+		UI.Check(db, "healthText", "Health numbers on the bar", changed),
+		UI.Check(db, "combatHide", "Hide unit tooltips in combat", changed),
+		{ text = "Items and spells", title = true },
+		UI.Check(db, "quality", "Colour the border by item quality", changed),
+		UI.Check(db, "itemLevel", "Show item level", changed),
+		UI.Check(db, "itemCount", "Show how many I have", changed),
+		UI.Check(db, "itemID", "Show item ID", changed),
+		UI.Check(db, "spellID", "Show spell ID", changed),
+		UI.Check(db, "auraSource", "Show who cast a buff or debuff", changed),
+		{ text = "Position", title = true },
+		anchorEntry("Default corner", "default"),
+		anchorEntry("Follow the cursor", "cursor"),
+		anchorEntry("Right of the cursor", "cursorRight"),
+		anchorEntry("Fixed spot", "fixed"),
+		{ text = ns.MoverShown() and "Hide the anchor" or "Move the fixed spot...", func = function() ns.ToggleMover() end },
+	}
+	for _, e in ipairs(UI.ScaleEntries(db, changed)) do entries[#entries + 1] = e end
+	return entries
+end
+
+function ns.OpenOptions(anchor)
+	if not ns.db then return end
 	if not anchor then
 		if not holder then
 			holder = CreateFrame("Frame", nil, UIParent)
@@ -28,27 +58,5 @@ function ns.OpenOptions(anchor)
 		end
 		anchor = holder
 	end
-	local entries = {
-		{ text = "ATip", title = true },
-		UI.Toggle(db, "style", "Dark flat look", changed),
-		UI.Toggle(db, "classColor", "Colour names by class or reaction"),
-		UI.Toggle(db, "border", "Colour the border by class or reaction"),
-		UI.Toggle(db, "guild", "Highlight guild names"),
-		UI.Toggle(db, "level", "Coloured level, race and class line"),
-		UI.Toggle(db, "target", "Show who the unit is targeting"),
-		UI.Toggle(db, "healthBar", "Slim health bar", changed),
-		UI.Toggle(db, "combatHide", "Hide unit tooltips in combat"),
-		{ text = "Items", title = true },
-		UI.Toggle(db, "quality", "Colour the border by item quality"),
-		UI.Toggle(db, "itemLevel", "Show item level"),
-		UI.Toggle(db, "itemID", "Show item ID"),
-		UI.Toggle(db, "spellID", "Show spell ID"),
-		{ text = "Position", title = true },
-		anchorEntry("Default corner", "default"),
-		anchorEntry("Follow the cursor", "cursor"),
-		anchorEntry("Fixed spot", "fixed"),
-		{ text = ns.MoverShown() and "Hide the anchor" or "Move the fixed spot...", func = function() ns.ToggleMover() end },
-	}
-	for _, e in ipairs(UI.ScaleEntries(db, changed)) do entries[#entries + 1] = e end
-	UI.Menu(anchor, entries)
+	UI.Menu(anchor, ns.Options())
 end

@@ -3,6 +3,14 @@ local Get = ns.Get
 
 local GetInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 
+local function count(id, bank)
+	local fn = (C_Item and C_Item.GetItemCount) or GetItemCount
+	if not fn then return nil end
+	local ok, n = pcall(fn, id, bank)
+	if not ok or ns.IsSecret(n) or type(n) ~= "number" then return nil end
+	return n
+end
+
 local QUALITY = {
 	[0] = { 0.62, 0.62, 0.62 },
 	[1] = { 1, 1, 1 },
@@ -53,12 +61,67 @@ local function onItem(tip, data)
 		tip:AddLine("Item level " .. ilvl, 0.58, 0.6, 0.65)
 		added = true
 	end
+	if db.itemCount then
+		local bags = count(id, false)
+		local all = count(id, true)
+		if bags and all and all > 0 then
+			local text = "In bags " .. bags
+			if all > bags then text = text .. ", bank " .. (all - bags) end
+			tip:AddLine(text, 0.58, 0.6, 0.65)
+			added = true
+		end
+	end
 	if db.itemID then
 		tip:AddLine("Item ID " .. id, 0.58, 0.6, 0.65)
 		added = true
 	end
 	if added then tip:Show() end
 end
+
+local function onAura(tip, aura)
+	local db = ns.db
+	if not db or not ns.tips[tip] or ns.IsSecret(aura) or type(aura) ~= "table" then return end
+	local added = false
+	if db.auraSource then
+		local src = aura.sourceUnit
+		if not ns.IsSecret(src) and type(src) == "string" then
+			local name = ns.UnitName(src)
+			if name then
+				tip:AddLine("From " .. name, 0.58, 0.6, 0.65)
+				added = true
+			end
+		end
+	end
+	if db.spellID then
+		local id = aura.spellId
+		if not ns.IsSecret(id) and type(id) == "number" then
+			tip:AddLine("Spell ID " .. id, 0.58, 0.6, 0.65)
+			added = true
+		end
+	end
+	if added then tip:Show() end
+end
+
+local function byIndex(fallback)
+	return function(tip, unit, index, filter)
+		if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then return end
+		if ns.IsSecret(filter) or type(filter) ~= "string" then filter = fallback end
+		pcall(onAura, tip, Get(C_UnitAuras.GetAuraDataByIndex, unit, index, filter))
+	end
+end
+
+local function byInstance(tip, unit, id)
+	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByAuraInstanceID then return end
+	pcall(onAura, tip, Get(C_UnitAuras.GetAuraDataByAuraInstanceID, unit, id))
+end
+
+local AURA_HOOKS = {
+	SetUnitAura = byIndex("HELPFUL"),
+	SetUnitBuff = byIndex("HELPFUL"),
+	SetUnitDebuff = byIndex("HARMFUL"),
+	SetUnitBuffByAuraInstanceID = byInstance,
+	SetUnitDebuffByAuraInstanceID = byInstance,
+}
 
 local function onSpell(tip, data)
 	if not ns.db or not ns.tips[tip] or not ns.db.spellID then return end
@@ -70,6 +133,7 @@ end
 
 ns.OnItem = onItem
 ns.OnSpell = onSpell
+ns.OnAura = onAura
 
 ns:Listen("LOGIN", function()
 	local hooked = false
@@ -81,6 +145,11 @@ ns:Listen("LOGIN", function()
 			pcall(TooltipDataProcessor.AddTooltipPostCall, Enum.TooltipDataType.Spell, function(tip, data)
 				pcall(onSpell, tip, data)
 			end)
+		end
+	end
+	if hooksecurefunc and type(GameTooltip) == "table" then
+		for name, fn in pairs(AURA_HOOKS) do
+			if type(GameTooltip[name]) == "function" then pcall(hooksecurefunc, GameTooltip, name, fn) end
 		end
 	end
 	if not hooked then

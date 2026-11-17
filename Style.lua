@@ -48,10 +48,16 @@ local function styleBar()
 	if type(bar) ~= "table" then return end
 	if ns.db.healthBar and ns.db.style then
 		bar:SetStatusBarTexture(WHITE)
-		bar:SetHeight(4)
 		bar:ClearAllPoints()
-		bar:SetPoint("BOTTOMLEFT", GameTooltip, "BOTTOMLEFT", 2, 2)
-		bar:SetPoint("BOTTOMRIGHT", GameTooltip, "BOTTOMRIGHT", -2, 2)
+		if ns.db.healthText then
+			bar:SetHeight(12)
+			bar:SetPoint("TOPLEFT", GameTooltip, "BOTTOMLEFT", 1, -1)
+			bar:SetPoint("TOPRIGHT", GameTooltip, "BOTTOMRIGHT", -1, -1)
+		else
+			bar:SetHeight(4)
+			bar:SetPoint("BOTTOMLEFT", GameTooltip, "BOTTOMLEFT", 2, 2)
+			bar:SetPoint("BOTTOMRIGHT", GameTooltip, "BOTTOMRIGHT", -2, 2)
+		end
 		barStyled = true
 	elseif barStyled then
 		bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-TargetingFrame-BarFill")

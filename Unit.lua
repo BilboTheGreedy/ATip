@@ -15,6 +15,47 @@ local TAGS = {
 	worldboss = "Boss",
 }
 
+local hpText
+
+local function healthText(unit)
+	local bar = GameTooltipStatusBar
+	if type(bar) ~= "table" then return end
+	local db = ns.db
+	if not db.healthText or not db.healthBar or not unit then
+		if hpText then hpText:SetText("") end
+		return
+	end
+	if not hpText then
+		hpText = ns.UI.Text(bar, "GameFontHighlightSmall", "CENTER")
+		hpText:SetPoint("CENTER", bar, "CENTER", 0, 0)
+		ns.hpText = hpText
+	end
+	local ok, hp = pcall(UnitHealth, unit)
+	local ok2, max = pcall(UnitHealthMax, unit)
+	if not ok or not ok2 then
+		hpText:SetText("")
+		return
+	end
+	if ns.IsSecret(hp) or ns.IsSecret(max) then
+		if not pcall(hpText.SetFormattedText, hpText, "%s / %s", hp, max) then hpText:SetText("") end
+		return
+	end
+	if type(hp) ~= "number" or type(max) ~= "number" or max <= 0 then
+		hpText:SetText("")
+		return
+	end
+	hpText:SetText(ACore.Short(hp) .. " / " .. ACore.Short(max) .. "  " .. math.floor(hp / max * 100 + 0.5) .. "%")
+end
+
+ns.HealthText = healthText
+
+local function levelOf(unit)
+	if not UnitLevel then return nil, true end
+	local ok, level = pcall(UnitLevel, unit)
+	if not ok or ns.IsSecret(level) then return nil, true end
+	return level, false
+end
+
 local function unitOf(tip)
 	local unit
 	if TooltipUtil and TooltipUtil.GetDisplayedUnit then
@@ -114,10 +155,10 @@ local function onUnit(tip)
 				end
 			end
 		end
-		if db.level then
+		local level, hidden = levelOf(unit)
+		if db.level and not hidden then
 			local line = levelLine(tip, from)
 			if line then
-				local level = Get(UnitLevel, unit)
 				local lr, lg, lb = levelColor(level)
 				local parts = { ns.Hex(lr, lg, lb) .. ((type(level) == "number" and level > 0) and level or "??") .. "|r" }
 				local race = Get(UnitRace, unit)
@@ -135,10 +176,10 @@ local function onUnit(tip)
 		end
 	else
 		r, g, b = reactionColor(unit)
-		if db.level then
+		local level, hidden = levelOf(unit)
+		if db.level and not hidden then
 			local line, text = levelLine(tip, from)
 			if line then
-				local level = Get(UnitLevel, unit)
 				local lr, lg, lb = levelColor(level)
 				line:SetTextColor(lr, lg, lb)
 				local tag = TAGS[Get(UnitClassification, unit) or ""]
@@ -159,6 +200,7 @@ local function onUnit(tip)
 	else
 		ns.BarColor(0.25, 0.85, 0.3)
 	end
+	if tip == GameTooltip then healthText(unit) end
 
 	if db.target then
 		local tgt = unit .. "target"
@@ -170,7 +212,7 @@ local function onUnit(tip)
 				text = unitName(tgt)
 			end
 			if text then
-				tip:AddLine("Target: " .. text, 0.58, 0.6, 0.65)
+				tip:AddLine((type(TARGET) == "string" and TARGET or "Target") .. ": " .. text, 0.58, 0.6, 0.65)
 				tip:Show()
 			end
 		end
@@ -178,6 +220,7 @@ local function onUnit(tip)
 end
 
 ns.OnUnit = onUnit
+ns.UnitName = unitName
 
 ns:Listen("LOGIN", function()
 	local hooked = false
@@ -196,6 +239,7 @@ ns:Listen("LOGIN", function()
 		pcall(bar.HookScript, bar, "OnValueChanged", function()
 			if not ns.db.healthBar or not GameTooltip:IsShown() then return end
 			local unit = unitOf(GameTooltip)
+			healthText(unit)
 			if not unit then return end
 			local r, g, b
 			if Get(UnitIsPlayer, unit) then

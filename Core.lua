@@ -9,6 +9,9 @@ local defaults = {
 	level = true,
 	target = true,
 	healthBar = true,
+	healthText = false,
+	itemCount = true,
+	auraSource = true,
 	quality = true,
 	itemLevel = true,
 	itemID = false,
@@ -62,6 +65,7 @@ ACore.Register({
 	title = "ATip",
 	slash = "/atip",
 	desc = "tooltips",
+	options = function() return ns.Options() end,
 	toggle = function() ns.OpenOptions() end,
 })
 

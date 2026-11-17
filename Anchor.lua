@@ -48,6 +48,8 @@ local function anchor(tip, parent)
 	local mode = ns.db.anchor
 	if mode == "cursor" then
 		tip:SetOwner(parent or UIParent, "ANCHOR_CURSOR")
+	elseif mode == "cursorRight" then
+		tip:SetOwner(parent or UIParent, "ANCHOR_CURSOR_RIGHT", 24, 0)
 	elseif mode == "fixed" then
 		local m = ensure()
 		tip:SetOwner(parent or UIParent, "ANCHOR_NONE")
